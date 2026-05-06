@@ -72,10 +72,13 @@ public class Main {
 
             switch (option) {
                 case 1: {
-                    // Insertar
                     String name = readInput(scanner, "Ingrese el nombre a insertar: ");
-                    tree.insert(name);
-                    System.out.println("'" + name + "' insertado.");
+                    InsertResult result = tree.insert(name);
+                    if (result.inserted) {
+                        System.out.println("[INSERT] '" + name + "' insertado correctamente.");
+                    } else {
+                        System.out.println("[INSERT] '" + name + "' ya existe en el árbol. No se insertó.");
+                    }
                     break;
                 }
                 case 2: {
@@ -85,13 +88,16 @@ public class Main {
                     break;
                 }
                 case 3: {
-                    // Buscar
-                    String name = readInput(scanner, "Ingrese el nombre a buscar: ");
-                    boolean found = tree.search(name);
-                    if (found) {
-                        System.out.println("'" + name + "' SÍ se encuentra en el árbol.");
+                    if (tree.isEmpty()) {
+                        System.out.println("El árbol está vacío. No hay nada que buscar.");
                     } else {
-                        System.out.println("'" + name + "' NO se encuentra en el árbol.");
+                        String name = readInput(scanner, "Ingrese el nombre a buscar: ");
+                        boolean found = tree.search(name);
+                        if (found) {
+                            System.out.println("[BÚSQUEDA] '" + name + "' encontrada en el árbol.");
+                        } else {
+                            System.out.println("[BÚSQUEDA] '" + name + "' no se encuentra en el árbol.");
+                        }
                     }
                     break;
                 }

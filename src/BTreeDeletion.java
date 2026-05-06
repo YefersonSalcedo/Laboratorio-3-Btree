@@ -37,6 +37,32 @@ public class BTreeDeletion {
         this.order = order;
     }
 
+    public void delete(String key) {
+        if (tree.isEmpty()) {
+            System.out.println("El árbol está vacío. No hay nada que eliminar.");
+            return;
+        }
+
+        if (!tree.search(key)) {
+            System.out.println("[DELETE] '" + key + "' no existe en el árbol.");
+            return;
+        }
+
+        if (tree.root != null && tree.root.isLeaf) {
+            int pos = tree.findPosition(tree.root, key);
+            if (pos < tree.root.keys.size() && tree.root.keys.get(pos).equals(key)) {
+                tree.root.keys.remove(pos);
+                if (tree.root.keys.isEmpty()) {
+                    tree.root = null;
+                }
+                System.out.println("[DELETE] '" + key + "' eliminado del árbol.");
+                return;
+            }
+        }
+
+        System.out.println("[DELETE] '" + key + "' no pudo eliminarse con la implementación actual.");
+    }
+
     /**
      * Punto de entrada público para eliminar una clave del árbol.
      * Antes de eliminar verifica que el árbol no esté vacío y que la clave

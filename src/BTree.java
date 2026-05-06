@@ -63,30 +63,95 @@ public class BTree {
         return new SplitResult(promotedKey, left, right);
     }
 
-    // =========================================================================
-    //  MÉTODOS DEL INTEGRANTE 2 – stubs para compilación
-    // =========================================================================
+    public InsertResult insert(String key) {
+        if (root == null) {
+            root = new Node(true);
+            root.keys.add(key);
+            return new InsertResult(true, false);
+        }
 
-    /**
-     * Inserta una clave en el árbol B.
-     * Implementado por el Integrante 2.
-     *
-     * @param key La clave a insertar.
-     */
-    public void insert(String key) {
-        // Implementación a cargo del Integrante 2
+        InsertState state = new InsertState();
+        SplitResult split = insertRecursive(root, key, state);
+
+        if (!state.inserted) {
+            return new InsertResult(false, false);
+        }
+
+        if (split != null) {
+            Node newRoot = new Node(false);
+            newRoot.keys.add(split.promotedKey);
+            newRoot.children.add(split.left);
+            newRoot.children.add(split.right);
+            root = newRoot;
+            System.out.println("[SPLIT RAÍZ] Nueva raíz creada con clave: '" + split.promotedKey + "'");
+        }
+
+        return new InsertResult(true, state.hadOverflow);
     }
 
-    /**
-     * Busca una clave en el árbol B.
-     * Implementado por el Integrante 2.
-     *
-     * @param key La clave a buscar.
-     * @return true si la clave existe en el árbol, false en caso contrario.
-     */
+    private SplitResult insertRecursive(Node node, String key, InsertState state) {
+        int pos = findPosition(node, key);
+
+        if (pos < node.keys.size() && node.keys.get(pos).compareTo(key) == 0) {
+            state.inserted = false;
+            return null;
+        }
+
+        if (node.isLeaf) {
+            insertSorted(node.keys, key);
+            state.inserted = true;
+
+            if (node.keys.size() >= order) {
+                state.hadOverflow = true;
+                SplitResult split = splitNode(node);
+                System.out.println("[SPLIT] Nodo dividido. Clave promovida: '" + split.promotedKey + "'");
+                return split;
+            }
+
+            return null;
+        }
+
+        SplitResult childSplit = insertRecursive(node.children.get(pos), key, state);
+
+        if (!state.inserted) {
+            return null;
+        }
+
+        if (childSplit != null) {
+            node.keys.add(pos, childSplit.promotedKey);
+            node.children.set(pos, childSplit.left);
+            node.children.add(pos + 1, childSplit.right);
+
+            if (node.keys.size() >= order) {
+                state.hadOverflow = true;
+                SplitResult split = splitNode(node);
+                System.out.println("[SPLIT] Nodo dividido. Clave promovida: '" + split.promotedKey + "'");
+                return split;
+            }
+        }
+
+        return null;
+    }
+
     public boolean search(String key) {
-        // Implementación a cargo del Integrante 2
-        return false;
+        if (root == null) {
+            return false;
+        }
+        return searchRecursive(root, key);
+    }
+
+    private boolean searchRecursive(Node node, String key) {
+        int pos = findPosition(node, key);
+
+        if (pos < node.keys.size() && node.keys.get(pos).compareTo(key) == 0) {
+            return true;
+        }
+
+        if (node.isLeaf) {
+            return false;
+        }
+
+        return searchRecursive(node.children.get(pos), key);
     }
 
     /**
