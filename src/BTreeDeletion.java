@@ -64,6 +64,11 @@ public class BTreeDeletion {
         if (tree.root != null && tree.root.keys.isEmpty() && !tree.root.isLeaf) {
             tree.root = tree.root.children.get(0);
         }
+
+        // raíz hoja que quedó sin claves --> árbol vacío
+        if (tree.root != null && tree.root.keys.isEmpty() && tree.root.isLeaf) {
+            tree.root = null;
+        }
     }
 
     /**
@@ -80,40 +85,31 @@ public class BTreeDeletion {
      * @return El nodo (posiblemente modificado) tras la operación.
      */
     private Node deleteRecursive(Node node, String key) {
-        // Ubica el índice donde está o debería estar la clave en este nodo
         int pos = tree.findPosition(node, key);
         boolean found = pos < node.keys.size() && node.keys.get(pos).equals(key);
 
         if (node.isLeaf) {
-            // CASO 1: la clave está en un nodo hoja
-            // Se elimina directamente. No es necesario reestructurar el árbol
-            // si el nodo resultante conserva al menos el mínimo de claves.
             node.keys.remove(pos);
-            int minKeys = (order - 1) / 2;
-            if (node.keys.size() >= minKeys) {
-                System.out.println("[CASO 1] '" + key + "' eliminado de nodo hoja sin underflow.");
+            // Solo imprime aquí si es la raíz
+            if (node == tree.root) {
+                System.out.println("[CASO 1] '" + key + "' eliminado del nodo raiz");
             }
             return node;
         }
 
         if (found) {
-            // CASO 3: la clave está en un nodo INTERNO
-            // No se puede eliminar directamente (rompería la estructura del árbol).
-            // Estrategia: reemplazar la clave con su PREDECESOR EN INORDEN,
-            // es decir, la mayor clave del subárbol izquierdo (hijo en posición `pos`).
-            // Luego se elimina ese predecesor de forma recursiva, lo que garantiza
-            // que siempre se termina eliminando una clave de una hoja.
+            // CASO 3: clave en nodo interno → reemplazar con predecesor
             String predecessor = getPredecessor(node, pos);
             System.out.println("[CASO 3] Eliminación de nodo interno. Reemplazo con predecesor '" + predecessor + "'.");
-            node.keys.set(pos, predecessor);  // La clave objetivo es reemplazada por el predecesor
+            node.keys.set(pos, predecessor);
             node.children.set(pos, deleteRecursive(node.children.get(pos), predecessor));
-            fixUnderflow(node, pos);          // El subárbol izquierdo puede haber quedado con underflow
+            // Se pasa predecessor porque esa es la clave que se eliminó de la hoja
+            fixUnderflow(node, pos, predecessor);
         } else {
-            // DESCENSO: la clave no está en este nodo
-            // `pos` apunta al hijo donde debe continuar la búsqueda según el orden
-            // de las claves del árbol B.
+            // DESCENSO: la clave no está en este nodo, bajar al hijo correspondiente
             node.children.set(pos, deleteRecursive(node.children.get(pos), key));
-            fixUnderflow(node, pos);  // El hijo pudo haber quedado con underflow tras la recursión
+            // Se pasa key porque es lo que se eliminó en el descenso
+            fixUnderflow(node, pos, key);
         }
 
         return node;
@@ -121,33 +117,46 @@ public class BTreeDeletion {
 
     /**
      * Detecta y corrige el underflow en el hijo ubicado en childIndex
-     * dentro del nodo padre dado.
+     * dentro del nodo padre dado. También reporta el caso de eliminación
+     * correspondiente cuando el hijo afectado es una hoja.
      * Un nodo entra en underflow cuando tiene menos de ⌈(order-1)/2⌉ claves.
      * La corrección se intenta en este orden de prioridad:
+     * - Sin underflow (Caso 1): si el hijo conserva el mínimo de claves tras
+     *       la eliminación y es una hoja, se reporta eliminación directa sin
+     *       reestructuración.
      * - Préstamo desde el hermano izquierdo (Caso 2a): si existe y tiene
      *       claves de sobra, se rota una clave a través del padre hacia el hijo.
-     * - Préstamo desde el hermano derecho(Caso 2a): análogo al anterior
+     * - Préstamo desde el hermano derecho (Caso 2a): análogo al anterior
      *       pero en dirección contraria.
      * - Fusión con un hermano (Caso 2b): si ningún hermano puede prestar,
-     *       el hijo se fusiona con uno de sus hermanos y la clave separadora del padre
-     *       desciende. Esto puede propagar underflow hacia arriba en cadena.
+     *       el hijo se fusiona con uno de sus hermanos y la clave separadora
+     *       del padre desciende al nodo fusionado. Esto puede propagar underflow
+     *       hacia arriba en cadena.
      *
      * @param parent     El nodo padre del hijo que puede tener underflow.
      * @param childIndex Índice del hijo afectado dentro de parent.children.
+     * @param key        La clave que fue eliminada, usada para el mensaje del Caso 1.
      */
-    private void fixUnderflow(Node parent, int childIndex) {
+    private void fixUnderflow(Node parent, int childIndex, String key) {
         int minKeys = (order - 1) / 2;
         Node child = parent.children.get(childIndex);
 
-        // Si el hijo tiene suficientes claves, no hay underflow -> no se hace nada
-        if (child.keys.size() >= minKeys) return;
+        // Sin underflow: el hijo tiene suficientes claves
+        if (child.keys.size() >= minKeys) {
+            // Solo reportar Caso 1 si el hijo es hoja
+            // (los nodos internos no generan mensaje aquí)
+            if (child.isLeaf) {
+                System.out.println("[CASO 1] '" + key + "' eliminado de nodo hoja sin underflow.");
+            }
+            return;
+        }
 
         // Intento 1: préstamo desde el hermano IZQUIERDO
         if (childIndex > 0) {
             Node leftSibling = parent.children.get(childIndex - 1);
             if (leftSibling.keys.size() > minKeys) {
-                borrowFromLeft(parent, childIndex);
                 System.out.println("[CASO 2a] Underflow detectado. Préstamo realizado desde hermano izquierdo.");
+                borrowFromLeft(parent, childIndex);
                 return;
             }
         }
@@ -156,8 +165,8 @@ public class BTreeDeletion {
         if (childIndex < parent.children.size() - 1) {
             Node rightSibling = parent.children.get(childIndex + 1);
             if (rightSibling.keys.size() > minKeys) {
-                borrowFromRight(parent, childIndex);
                 System.out.println("[CASO 2a] Underflow detectado. Préstamo realizado desde hermano derecho.");
+                borrowFromRight(parent, childIndex);
                 return;
             }
         }
@@ -166,12 +175,12 @@ public class BTreeDeletion {
         // Se prefiere fusionar con el hermano izquierdo si existe; de lo contrario,
         // se fusiona con el derecho. La clave separadora del padre desciende al nodo
         // fusionado, lo que puede provocar underflow en el padre (propagación en cascada).
+        System.out.println("[CASO 2b] Underflow resuelto por fusión con hermano.");
         if (childIndex > 0) {
             merge(parent, childIndex - 1);  // Fusión: left = hijo[childIndex-1], right = child
         } else {
             merge(parent, childIndex);      // Fusión: left = child, right = hijo[childIndex+1]
         }
-        System.out.println("[CASO 2b] Underflow resuelto por fusión con hermano.");
     }
 
     // ==========================================================================
