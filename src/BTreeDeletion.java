@@ -37,32 +37,6 @@ public class BTreeDeletion {
         this.order = order;
     }
 
-    public void delete(String key) {
-        if (tree.isEmpty()) {
-            System.out.println("El árbol está vacío. No hay nada que eliminar.");
-            return;
-        }
-
-        if (!tree.search(key)) {
-            System.out.println("[DELETE] '" + key + "' no existe en el árbol.");
-            return;
-        }
-
-        if (tree.root != null && tree.root.isLeaf) {
-            int pos = tree.findPosition(tree.root, key);
-            if (pos < tree.root.keys.size() && tree.root.keys.get(pos).equals(key)) {
-                tree.root.keys.remove(pos);
-                if (tree.root.keys.isEmpty()) {
-                    tree.root = null;
-                }
-                System.out.println("[DELETE] '" + key + "' eliminado del árbol.");
-                return;
-            }
-        }
-
-        System.out.println("[DELETE] '" + key + "' no pudo eliminarse con la implementación actual.");
-    }
-
     /**
      * Punto de entrada público para eliminar una clave del árbol.
      * Antes de eliminar verifica que el árbol no esté vacío y que la clave
@@ -71,7 +45,7 @@ public class BTreeDeletion {
      *
      * @param key La clave a eliminar.
      */
-    /*
+
     public void delete(String key) {
         if (tree.isEmpty()) {
             System.out.println("El árbol está vacío. No hay nada que eliminar.");
@@ -91,7 +65,6 @@ public class BTreeDeletion {
             tree.root = tree.root.children.get(0);
         }
     }
-     */
 
     /**
      * Núcleo recursivo de la eliminación. Desciende por el árbol buscando la clave
@@ -106,7 +79,6 @@ public class BTreeDeletion {
      * @param key  La clave que se desea eliminar.
      * @return El nodo (posiblemente modificado) tras la operación.
      */
-    /*
     private Node deleteRecursive(Node node, String key) {
         // Ubica el índice donde está o debería estar la clave en este nodo
         int pos = tree.findPosition(node, key);
@@ -146,7 +118,6 @@ public class BTreeDeletion {
 
         return node;
     }
-     */
 
     /**
      * Detecta y corrige el underflow en el hijo ubicado en childIndex
@@ -164,7 +135,6 @@ public class BTreeDeletion {
      * @param parent     El nodo padre del hijo que puede tener underflow.
      * @param childIndex Índice del hijo afectado dentro de parent.children.
      */
-    /*
     private void fixUnderflow(Node parent, int childIndex) {
         int minKeys = (order - 1) / 2;
         Node child = parent.children.get(childIndex);
@@ -203,7 +173,6 @@ public class BTreeDeletion {
         }
         System.out.println("[CASO 2b] Underflow resuelto por fusión con hermano.");
     }
-     */
 
     // ==========================================================================
     //  MÉTODOS AUXILIARES
@@ -226,7 +195,6 @@ public class BTreeDeletion {
      * @param pos  Índice de la clave en node.keys.
      * @return La clave predecesora.
      */
-    /*
     private String getPredecessor(Node node, int pos) {
         Node current = node.children.get(pos);  // Raíz del subárbol izquierdo
         // Desciende siempre por el hijo más derecho hasta alcanzar una hoja
@@ -235,7 +203,6 @@ public class BTreeDeletion {
         }
         return current.keys.get(current.keys.size() - 1);  // Última (mayor) clave de la hoja
     }
-     */
 
     /**
      * Realiza un préstamo desde el hermano IZQUIERDO hacia el hijo con underflow
@@ -251,7 +218,6 @@ public class BTreeDeletion {
      * @param parent      El nodo padre que contiene el separador.
      * @param childIndex  Índice del hijo con underflow dentro de parent.children.
      */
-    /*
     private void borrowFromLeft(Node parent, int childIndex) {
         Node child = parent.children.get(childIndex);
         Node leftSibling = parent.children.get(childIndex - 1);
@@ -266,7 +232,6 @@ public class BTreeDeletion {
             child.children.add(0, leftSibling.children.remove(leftSibling.children.size() - 1));
         }
     }
-     */
 
     /**
      * Realiza un préstamo desde el hermano DERECHO hacia el hijo con underflow
@@ -282,7 +247,6 @@ public class BTreeDeletion {
      * @param parent      El nodo padre que contiene el separador.
      * @param childIndex  Índice del hijo con underflow dentro de {@code parent.children}.
      */
-    /*
     private void borrowFromRight(Node parent, int childIndex) {
         Node child = parent.children.get(childIndex);
         Node rightSibling = parent.children.get(childIndex + 1);
@@ -297,7 +261,6 @@ public class BTreeDeletion {
             child.children.add(rightSibling.children.remove(0));
         }
     }
-     */
 
     /**
      * Fusiona el hijo derecho del separador con el hijo izquierdo, absorbiendo
@@ -322,7 +285,6 @@ public class BTreeDeletion {
      * @param parent   El nodo padre del que desciende el separador.
      * @param sepIndex Índice de la clave separadora dentro de parent.keys.
      */
-    /*
     private void merge(Node parent, int sepIndex) {
         Node left = parent.children.get(sepIndex);
         Node right = parent.children.get(sepIndex + 1);
@@ -341,6 +303,4 @@ public class BTreeDeletion {
         parent.keys.remove(sepIndex);
         parent.children.remove(sepIndex + 1);  // El nodo derecho queda huérfano y será recolectado por el GC
     }
-
-     */
 }
